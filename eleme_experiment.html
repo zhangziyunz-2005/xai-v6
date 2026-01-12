@@ -1,0 +1,1030 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>骑手端 - 研究问卷</title>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body { 
+      font-family: -apple-system, BlinkMacSystemFont, "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", sans-serif;
+      background: #F5F5F5;
+      min-height: 100vh;
+    }
+    
+    .app-container {
+      max-width: 500px;
+      margin: 0 auto;
+      min-height: 100vh;
+      background: #F5F5F5;
+      position: relative;
+    }
+    
+    .page { display: none; min-height: 100vh; flex-direction: column; }
+    .page.active { display: flex; }
+    
+    :root {
+      --primary: #0099FF;
+      --primary-dark: #0077CC;
+      --primary-light: #E3F2FD;
+      --secondary: #00B8D4;
+      --gradient: linear-gradient(135deg, #0099FF 0%, #00B8D4 100%);
+      --header-gradient: linear-gradient(180deg, #00B8D4 0%, #0099FF 50%, #0077CC 100%);
+      --text: #222222;
+      --text-secondary: #666666;
+      --success: #00C853;
+      --danger: #FF3B30;
+    }
+    
+    .header {
+      background: var(--header-gradient);
+      padding: 50px 20px 20px;
+      color: #fff;
+    }
+    .header h2 { margin: 0; font-size: 20px; font-weight: 600; }
+    .header p { margin: 8px 0 0; font-size: 13px; opacity: 0.9; }
+    
+    .content { flex: 1; overflow-y: auto; padding: 20px; }
+    .footer { padding: 20px; padding-bottom: 40px; background: #fff; }
+    
+    .btn {
+      width: 100%;
+      padding: 16px;
+      border: none;
+      border-radius: 8px;
+      font-size: 17px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.3s;
+    }
+    .btn-primary { background: var(--gradient); color: #fff; }
+    .btn-primary:disabled { background: #ccc; cursor: not-allowed; }
+    
+    .card {
+      background: #fff;
+      border-radius: 12px;
+      padding: 20px;
+      margin-bottom: 15px;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.04);
+    }
+    
+    .option {
+      padding: 14px 16px;
+      background: #f8f8f8;
+      border: 2px solid transparent;
+      border-radius: 8px;
+      cursor: pointer;
+      margin-bottom: 10px;
+      display: flex;
+      align-items: center;
+      transition: all 0.2s;
+    }
+    .option:active { transform: scale(0.98); }
+    .option.selected { background: var(--primary-light); border-color: var(--primary); }
+    .option-radio {
+      width: 20px; height: 20px;
+      border-radius: 50%;
+      border: 2px solid #ddd;
+      margin-right: 12px;
+      display: flex; align-items: center; justify-content: center;
+      flex-shrink: 0;
+    }
+    .option.selected .option-radio { border-color: var(--primary); }
+    .option.selected .option-radio::after {
+      content: ''; width: 10px; height: 10px;
+      border-radius: 50%; background: var(--primary);
+    }
+    .option-text { font-size: 14px; color: var(--text); line-height: 1.5; }
+    
+    .likert-scale { display: flex; justify-content: space-between; align-items: flex-start; }
+    .likert-item { display: flex; flex-direction: column; align-items: center; cursor: pointer; flex: 1; }
+    .likert-circle {
+      width: 44px; height: 44px; border-radius: 50%;
+      background: #f0f0f0; border: 2px solid #ddd;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 16px; font-weight: 600; color: var(--text-secondary);
+      transition: all 0.2s;
+    }
+    .likert-item:active .likert-circle { transform: scale(0.95); }
+    .likert-item.selected .likert-circle {
+      background: var(--gradient); border-color: var(--primary); color: #fff;
+    }
+    .likert-label { font-size: 10px; color: var(--text-secondary); margin-top: 6px; text-align: center; height: 26px; }
+    
+    .progress-bar { height: 4px; background: rgba(255,255,255,0.3); border-radius: 2px; overflow: hidden; margin-top: 12px; }
+    .progress-fill { height: 100%; background: #fff; border-radius: 2px; transition: width 0.3s ease; }
+    
+    .notification-header {
+      background: var(--gradient);
+      padding: 20px; color: #fff; text-align: center;
+      border-radius: 12px 12px 0 0;
+    }
+    .notification-body { padding: 20px; }
+    .data-card { background: #F8F8F8; border-radius: 8px; padding: 16px; margin-bottom: 16px; }
+    .data-item {
+      display: flex; align-items: center; justify-content: space-between;
+      padding: 10px 12px; background: #fff; border-radius: 6px; margin-bottom: 8px;
+    }
+    .data-item:last-child { margin-bottom: 0; }
+    
+    .result-box {
+      background: linear-gradient(135deg, #FFF5F5 0%, #FFF 100%);
+      border-radius: 8px; padding: 20px; border: 2px solid #FF3B30;
+      text-align: center; margin-bottom: 16px;
+    }
+    .star-change { display: flex; align-items: center; justify-content: center; gap: 20px; margin: 16px 0; }
+    .star-old { font-size: 24px; font-weight: 700; color: var(--success); }
+    .star-new { font-size: 24px; font-weight: 700; color: var(--danger); }
+    
+    .explanation-box { border-radius: 8px; padding: 16px; margin-bottom: 16px; }
+    .explanation-feature { background: #E8F4FD; border: 1px solid #90CAF9; }
+    .explanation-counterfactual { background: #F3E8FD; border: 1px solid #CE93D8; }
+    .explanation-context { background: #E8FDF5; border: 1px solid #A5D6A7; }
+    .weight-stars { color: #FFD000; }
+    .tip-box { background: var(--primary-light); border-radius: 8px; padding: 16px; text-align: center; }
+    
+    .complete-page {
+      background: var(--header-gradient);
+      justify-content: center; align-items: center; text-align: center; padding: 40px;
+    }
+    .complete-icon {
+      width: 120px; height: 120px; background: #fff; border-radius: 50%;
+      display: flex; align-items: center; justify-content: center;
+      margin-bottom: 30px; box-shadow: 0 10px 30px rgba(0,0,0,0.15); font-size: 60px;
+    }
+    
+    input[type="text"], input[type="number"] {
+      width: 100%; padding: 14px 16px; border: 2px solid #eee;
+      border-radius: 8px; font-size: 15px; outline: none;
+    }
+    input:focus { border-color: var(--primary); }
+    
+    .loading-overlay {
+      position: fixed; top: 0; left: 0; right: 0; bottom: 0;
+      background: rgba(255,255,255,0.9);
+      display: flex; flex-direction: column; align-items: center; justify-content: center;
+      z-index: 1000;
+    }
+    .loading-spinner {
+      width: 40px; height: 40px; border: 4px solid #f0f0f0;
+      border-top-color: var(--primary); border-radius: 50%;
+      animation: spin 1s linear infinite;
+    }
+    @keyframes spin { to { transform: rotate(360deg); } }
+    
+    .overlap-option {
+      display: flex; align-items: center; justify-content: space-between;
+      padding: 12px 16px; background: #f8f8f8; border: 2px solid transparent;
+      border-radius: 8px; cursor: pointer; margin-bottom: 8px; transition: all 0.2s;
+    }
+    .overlap-option:active { transform: scale(0.98); }
+    .overlap-option.selected { background: var(--primary-light); border-color: var(--primary); }
+    .overlap-circles { display: flex; align-items: center; position: relative; }
+    .circle-self {
+      width: 40px; height: 40px; border-radius: 50%;
+      background: var(--primary); border: 2px solid var(--primary-dark);
+      position: relative; z-index: 2;
+    }
+    .circle-future {
+      width: 40px; height: 40px; border-radius: 50%;
+      background: var(--secondary); border: 2px solid #008B9E;
+      position: relative; z-index: 1;
+    }
+  </style>
+</head>
+<body>
+  <div class="app-container" id="app">
+    <div class="loading-overlay" id="loading">
+      <div class="loading-spinner"></div>
+      <p style="margin-top: 16px; color: #666;">正在初始化...</p>
+    </div>
+  </div>
+
+  <script>
+    // ==================== 配置区域 ====================
+    const CONFIG = {
+      PLATFORM: 'eleme',
+      PLATFORM_NAME: '该平台',
+      DATA_ENDPOINT: 'https://1395241645-blt3k01y8r.ap-guangzhou.tencentscf.com',
+      BACKUP_ENDPOINT: '',
+      DEBUG: false
+    };
+    
+    // 实验条件
+    const CONDITIONS = [
+      { key: 'no_explanation_high', explanation: 'none', contextAwareness: 'high' },
+      { key: 'no_explanation_low', explanation: 'none', contextAwareness: 'low' },
+      { key: 'feature_importance_high', explanation: 'feature', contextAwareness: 'high' },
+      { key: 'feature_importance_low', explanation: 'feature', contextAwareness: 'low' },
+      { key: 'counterfactual_high', explanation: 'counterfactual', contextAwareness: 'high' },
+      { key: 'counterfactual_low', explanation: 'counterfactual', contextAwareness: 'low' },
+    ];
+
+    // ==================== 设备信息收集 ====================
+    async function generateDeviceInfo() {
+      const deviceInfo = {
+        deviceId: '',
+        fingerprint: '',
+        userAgent: navigator.userAgent,
+        platform: navigator.platform,
+        language: navigator.language,
+        screenWidth: screen.width,
+        screenHeight: screen.height,
+        colorDepth: screen.colorDepth,
+        timezone: Intl.DateTimeFormat().resolvedOptions().timeZone,
+        timezoneOffset: new Date().getTimezoneOffset(),
+        location: null,
+        locationError: null,
+        referrer: document.referrer,
+        url: window.location.href
+      };
+      
+      try {
+        const canvas = document.createElement('canvas');
+        const ctx = canvas.getContext('2d');
+        canvas.width = 200; canvas.height = 50;
+        ctx.textBaseline = 'top';
+        ctx.font = '14px Arial';
+        ctx.fillStyle = '#f60';
+        ctx.fillRect(0, 0, 200, 50);
+        ctx.fillStyle = '#069';
+        ctx.fillText('XAI研究', 2, 15);
+        deviceInfo.fingerprint = canvas.toDataURL().slice(-50);
+      } catch (e) {
+        deviceInfo.fingerprint = 'not_supported';
+      }
+      
+      const idSource = [deviceInfo.userAgent, deviceInfo.screenWidth, deviceInfo.screenHeight, 
+                        deviceInfo.colorDepth, deviceInfo.timezone, deviceInfo.fingerprint].join('|');
+      deviceInfo.deviceId = 'D' + hashCode(idSource).toString(36).toUpperCase();
+      
+      if (navigator.geolocation) {
+        try {
+          const position = await new Promise((resolve, reject) => {
+            navigator.geolocation.getCurrentPosition(resolve, reject, {
+              enableHighAccuracy: false, timeout: 10000, maximumAge: 300000
+            });
+          });
+          deviceInfo.location = {
+            latitude: position.coords.latitude.toFixed(4),
+            longitude: position.coords.longitude.toFixed(4),
+            accuracy: Math.round(position.coords.accuracy)
+          };
+        } catch (e) {
+          deviceInfo.locationError = e.message || '获取失败';
+        }
+      } else {
+        deviceInfo.locationError = '不支持';
+      }
+      
+      return deviceInfo;
+    }
+    
+    function hashCode(str) {
+      let hash = 0;
+      for (let i = 0; i < str.length; i++) {
+        hash = ((hash << 5) - hash) + str.charCodeAt(i);
+        hash = hash & hash;
+      }
+      return Math.abs(hash);
+    }
+
+    // ==================== 均等随机分配 ====================
+    function getBalancedCondition() {
+      const storageKey = `xai_counts_${CONFIG.PLATFORM}_v7`;
+      let counts = {};
+      try {
+        const stored = localStorage.getItem(storageKey);
+        if (stored) counts = JSON.parse(stored);
+      } catch (e) { counts = {}; }
+      
+      CONDITIONS.forEach(c => { if (counts[c.key] === undefined) counts[c.key] = 0; });
+      const minCount = Math.min(...Object.values(counts));
+      const available = CONDITIONS.filter(c => counts[c.key] === minCount);
+      const selected = available[Math.floor(Math.random() * available.length)];
+      counts[selected.key]++;
+      try { localStorage.setItem(storageKey, JSON.stringify(counts)); } catch (e) {}
+      return selected;
+    }
+
+    // ==================== 数据提交 ====================
+    async function submitData(data) {
+      if (CONFIG.DEBUG) console.log('准备提交数据:', data);
+      
+      if (!CONFIG.DATA_ENDPOINT) {
+        console.log('未配置数据端点，数据保存到本地');
+        saveToLocalStorage(data);
+        return { success: true, method: 'localStorage' };
+      }
+      
+      const jsonData = JSON.stringify(data);
+      
+      // 方法1: 使用fetch POST（CORS已配置）
+      try {
+        const response = await fetch(CONFIG.DATA_ENDPOINT, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: jsonData
+        });
+        console.log('fetch POST提交成功');
+        saveToLocalStorage(data);
+        return { success: true, method: 'fetch' };
+      } catch (e) {
+        console.log('fetch POST失败:', e);
+      }
+      
+      // 方法2: 使用GET参数方式
+      try {
+        const encodedData = encodeURIComponent(jsonData);
+        const response = await fetch(CONFIG.DATA_ENDPOINT + '?data=' + encodedData, {
+          method: 'GET'
+        });
+        console.log('fetch GET提交成功');
+        saveToLocalStorage(data);
+        return { success: true, method: 'fetchGet' };
+      } catch (e) {
+        console.log('fetch GET失败:', e);
+      }
+      
+      // 方法3: 使用sendBeacon
+      if (navigator.sendBeacon) {
+        try {
+          const blob = new Blob([jsonData], { type: 'application/json' });
+          const submitted = navigator.sendBeacon(CONFIG.DATA_ENDPOINT, blob);
+          if (submitted) {
+            console.log('sendBeacon提交成功');
+            saveToLocalStorage(data);
+            return { success: true, method: 'sendBeacon' };
+          }
+        } catch (e) {
+          console.log('sendBeacon失败:', e);
+        }
+      }
+      
+      // 方法4: 使用Image beacon（最兼容）
+      try {
+        const encodedData = encodeURIComponent(jsonData);
+        const img = new Image();
+        img.src = CONFIG.DATA_ENDPOINT + '?data=' + encodedData + '&t=' + Date.now();
+        console.log('Image beacon提交');
+        saveToLocalStorage(data);
+        return { success: true, method: 'image' };
+      } catch (e) {
+        console.log('Image beacon失败:', e);
+      }
+      
+      saveToLocalStorage(data);
+      return { success: false, method: 'localStorage' };
+    }
+    
+    function saveToLocalStorage(data) {
+      try {
+        localStorage.setItem(`xai_data_${data.participantId}`, JSON.stringify(data));
+        let dataList = JSON.parse(localStorage.getItem('xai_data_list') || '[]');
+        dataList.push({ id: data.participantId, time: data.startTime });
+        localStorage.setItem('xai_data_list', JSON.stringify(dataList));
+      } catch (e) {}
+    }
+
+    // ==================== 全局状态 ====================
+    let state = {
+      currentPage: 'welcome',
+      participantId: 'P' + Date.now().toString(36).toUpperCase() + Math.random().toString(36).substr(2, 4).toUpperCase(),
+      startTime: new Date().toISOString(),
+      condition: null,
+      deviceInfo: null,
+      responses: {},
+      questionnaireSection: 0,
+      submitting: false
+    };
+
+    function $(selector) { return document.querySelector(selector); }
+    function saveResponse(key, value) { state.responses[key] = value; }
+    
+    function goToPage(pageName) {
+      state.responses[`page_${state.currentPage}_end`] = new Date().toISOString();
+      state.currentPage = pageName;
+      render();
+      window.scrollTo(0, 0);
+    }
+
+    function render() {
+      const app = $('#app');
+      switch(state.currentPage) {
+        case 'welcome': app.innerHTML = renderWelcome(); break;
+        case 'consent': app.innerHTML = renderConsent(); break;
+        case 'scenario': app.innerHTML = renderScenario(); break;
+        case 'notification': app.innerHTML = renderNotification(); break;
+        case 'questionnaire': app.innerHTML = renderQuestionnaire(); break;
+        case 'demographics': app.innerHTML = renderDemographics(); break;
+        case 'submitting': app.innerHTML = renderSubmitting(); break;
+        case 'complete': app.innerHTML = renderComplete(); break;
+      }
+    }
+
+    // ==================== 页面渲染 ====================
+    function renderWelcome() {
+      return `
+        <div class="page active" style="background: var(--header-gradient); justify-content: center; align-items: center; padding: 40px;">
+          <div style="text-align: center;">
+            <div style="width: 100px; height: 100px; background: #fff; border-radius: 20px; display: flex; align-items: center; justify-content: center; margin: 0 auto 30px; box-shadow: 0 8px 24px rgba(0,0,0,0.15);">
+              <span style="font-size: 50px;">🛵</span>
+            </div>
+            <h1 style="font-size: 28px; font-weight: 700; color: #fff; margin: 0 0 12px;">骑手端</h1>
+            <p style="font-size: 16px; color: rgba(255,255,255,0.9); margin: 0 0 8px;">外卖配送平台</p>
+            <div style="background: rgba(255,255,255,0.2); border-radius: 20px; padding: 6px 16px; display: inline-block; margin-top: 10px;">
+              <span style="color: #fff; font-size: 13px;">v5.2.1</span>
+            </div>
+          </div>
+          <div style="position: absolute; bottom: 60px; left: 40px; right: 40px;">
+            <button class="btn" style="background: #fff; color: var(--primary-dark); font-weight: 700;" onclick="goToPage('consent')">开始参与研究</button>
+            <p style="text-align: center; font-size: 12px; color: rgba(255,255,255,0.7); margin-top: 16px;">本研究由中南财经政法大学开展</p>
+          </div>
+        </div>
+      `;
+    }
+
+    function renderConsent() {
+      return `
+        <div class="page active">
+          <div class="header"><h2>研究知情同意书</h2></div>
+          <div class="content">
+            <div class="card">
+              <h3 style="font-size: 16px; color: var(--text); margin: 0 0 15px;">📋 研究说明</h3>
+              <div style="font-size: 14px; color: var(--text-secondary); line-height: 1.8;">
+                <p style="margin-bottom: 12px;"><strong>研究目的：</strong>本研究旨在了解外卖骑手的日常工作体验与感受。</p>
+                <p style="margin-bottom: 12px;"><strong>研究过程：</strong>您将阅读一个情景描述，想象自己是情景中的外卖骑手，然后回答一系列问题。整个过程约需<strong>5-10分钟</strong>。</p>
+                <p style="margin-bottom: 12px;"><strong>自愿参与：</strong>您的参与完全自愿，可随时退出而不会受到任何不利影响。</p>
+                <p style="margin-bottom: 12px;"><strong>隐私保护：</strong>您的回答将被匿名处理，仅用于学术研究目的。</p>
+                <p style="margin-bottom: 0;"><strong>联系方式：</strong>如有任何疑问，请联系研究负责人。</p>
+              </div>
+            </div>
+            <div class="option" id="consent-checkbox" onclick="toggleConsent()">
+              <div class="option-radio"></div>
+              <span class="option-text">我已阅读并理解上述内容，同意参与本研究</span>
+            </div>
+          </div>
+          <div class="footer">
+            <button class="btn btn-primary" id="consent-btn" disabled onclick="startExperiment()">我同意参与</button>
+          </div>
+        </div>
+      `;
+    }
+    
+    function toggleConsent() {
+      const cb = $('#consent-checkbox');
+      cb.classList.toggle('selected');
+      $('#consent-btn').disabled = !cb.classList.contains('selected');
+    }
+    
+    function startExperiment() {
+      state.condition = getBalancedCondition();
+      saveResponse('condition_key', state.condition.key);
+      saveResponse('explanation_type', state.condition.explanation);
+      saveResponse('context_awareness', state.condition.contextAwareness);
+      saveResponse('platform', CONFIG.PLATFORM);
+      goToPage('scenario');
+    }
+
+    function renderScenario() {
+      return `
+        <div class="page active">
+          <div class="header">
+            <h2>📖 情景介绍</h2>
+            <p>请仔细阅读并代入角色</p>
+          </div>
+          <div class="content">
+            <div class="card" style="background: linear-gradient(135deg, #E3F2FD 0%, #FFF 100%); border: 1px solid #90CAF9;">
+              <div style="display: flex; align-items: center; margin-bottom: 12px;">
+                <span style="font-size: 24px; margin-right: 10px;">🛵</span>
+                <span style="font-size: 16px; font-weight: 600; color: #1565C0;">您的角色设定</span>
+              </div>
+              <p style="font-size: 14px; color: #37474F; line-height: 1.8; margin: 0;">
+                您是一名在某外卖平台接单的骑手。
+              </p>
+            </div>
+            
+            <div class="card">
+              <h4 style="font-size: 15px; color: var(--text); margin: 0 0 12px;">⭐ 骑手星级制度</h4>
+              <div style="font-size: 13px; color: var(--text-secondary); line-height: 1.8;">
+                <p style="margin: 0 0 8px;">• 您的基础配送费不受星级影响</p>
+                <p style="margin: 0 0 8px;">• <strong style="color: var(--secondary);">六星级骑手</strong>每单可获得额外 <strong style="color: var(--danger);">0.55元</strong> 的冲单补贴</p>
+                <div style="background: var(--primary-light); padding: 8px 12px; border-radius: 6px; margin-top: 12px;">
+                  <strong>您目前的派单优先级是「六星级」</strong>
+                </div>
+              </div>
+            </div>
+            
+            <div class="card">
+              <h4 style="font-size: 15px; color: var(--text); margin: 0 0 12px;">📝 申诉通道说明</h4>
+              <div style="font-size: 13px; color: var(--text-secondary); line-height: 1.8;">
+                <p style="margin: 0 0 8px;">• 申诉过程保密，不会影响正常接单和账号状态</p>
+                <p style="margin: 0 0 8px;">• 每条申诉由专人复核，48h内回复反馈结果</p>
+                <p style="margin: 0;">• 如申诉成立，将撤销调整并恢复原有星级</p>
+              </div>
+            </div>
+            
+            <div class="card" style="background: linear-gradient(135deg, #FFEBEE 0%, #FFF 100%); border: 1px solid #FFCDD2;">
+              <div style="display: flex; align-items: center; margin-bottom: 10px;">
+                <span style="font-size: 20px; margin-right: 8px;">😟</span>
+                <span style="font-size: 15px; font-weight: 600; color: #C62828;">近期变化</span>
+              </div>
+              <p style="font-size: 14px; color: #5D4037; line-height: 1.8; margin: 0;">
+                最近几天，您明显感觉到手的结算收入变少了，而且同样的单子配送费似乎比以前更低了。
+              </p>
+            </div>
+          </div>
+          <div class="footer">
+            <button class="btn btn-primary" onclick="goToPage('notification')">打开APP查看通知 →</button>
+          </div>
+        </div>
+      `;
+    }
+
+    function renderNotification() {
+      const isHighContext = state.condition.contextAwareness === 'high';
+      const explanationType = state.condition.explanation;
+      
+      let contextHTML = isHighContext ? `
+        <div class="explanation-box explanation-context">
+          <p style="font-size: 14px; color: #2E7D32; margin: 0 0 12px; font-weight: 500;">同时，系统已逐单分析了您配送时遇到的实际情况：</p>
+          <div style="font-size: 13px; color: #33691E; line-height: 1.8;">
+            <p style="margin: 0 0 6px;">· 12月3日 订单#2847：当日暴雨，路面积水严重，<span style="color: #00C853; font-weight: 500;">已纳入考虑</span></p>
+            <p style="margin: 0 0 6px;">· 12月11日 订单#3156：商家出餐延迟23分钟，<span style="color: #00C853; font-weight: 500;">已纳入考虑</span></p>
+            <p style="margin: 0 0 6px;">· 12月18日 订单#3892：晚高峰交通拥堵，<span style="color: #00C853; font-weight: 500;">已纳入考虑</span></p>
+            <p style="margin: 0; font-style: italic;">……共计47单存在客观困难因素，均已纳入评估</p>
+          </div>
+        </div>
+      ` : `
+        <div style="background: #F5F5F5; border-radius: 8px; padding: 16px; margin-bottom: 16px;">
+          <p style="font-size: 14px; color: #666; margin: 0;">所有骑手适用相同考核规则。</p>
+        </div>
+      `;
+      
+      let explanationHTML = '';
+      if (explanationType === 'feature') {
+        explanationHTML = `
+          <div class="explanation-box explanation-feature">
+            <h4 style="font-size: 14px; color: #1565C0; margin: 0 0 12px;">📊 本次调整的主要依据</h4>
+            <p style="font-size: 13px; color: #1976D2; margin: 0 0 12px;">系统分析显示，以下指标影响了您的派单优先级：</p>
+            <div style="background: #fff; border-radius: 6px; padding: 12px; margin-bottom: 10px;">
+              <p style="font-size: 13px; font-weight: 500; color: var(--text); margin: 0 0 6px;">▸ 准时送达率：82.3%（平台要求≥88%）</p>
+              <div style="display: flex; align-items: center;"><span style="font-size: 12px; color: var(--text-secondary); margin-right: 8px;">影响权重：</span><span class="weight-stars">★★★★★</span></div>
+            </div>
+            <div style="background: #fff; border-radius: 6px; padding: 12px; margin-bottom: 10px;">
+              <p style="font-size: 13px; font-weight: 500; color: var(--text); margin: 0 0 6px;">▸ 顾客评分：4.2分（平台要求≥4.5分）</p>
+              <div style="display: flex; align-items: center;"><span style="font-size: 12px; color: var(--text-secondary); margin-right: 8px;">影响权重：</span><span class="weight-stars">★★★★☆</span></div>
+            </div>
+            <div style="background: #fff; border-radius: 6px; padding: 12px;">
+              <p style="font-size: 13px; font-weight: 500; color: var(--text); margin: 0 0 6px;">▸ 订单取消率：4.8%（平台要求≤3%）</p>
+              <div style="display: flex; align-items: center;"><span style="font-size: 12px; color: var(--text-secondary); margin-right: 8px;">影响权重：</span><span class="weight-stars">★★★☆☆</span></div>
+            </div>
+          </div>
+        `;
+      } else if (explanationType === 'counterfactual') {
+        explanationHTML = `
+          <div class="explanation-box explanation-counterfactual">
+            <h4 style="font-size: 14px; color: #7B1FA2; margin: 0 0 12px;">🎯 如何恢复「六星级」</h4>
+            <p style="font-size: 13px; color: #8E24AA; margin: 0 0 12px;">系统分析显示，如果您做到以下改进，可以恢复「六星级」：</p>
+            <div style="background: #fff; border-radius: 6px; padding: 12px; margin-bottom: 10px;">
+              <p style="font-size: 13px; color: var(--text); margin: 0 0 6px;">▸ 如果您的准时送达率从 <strong>82.3%</strong> 提升到 <strong style="color: #7B1FA2;">88%以上</strong></p>
+              <p style="font-size: 12px; color: #00C853; margin: 0;">→ 您将达到六星级补贴的时效要求 ✓</p>
+            </div>
+            <div style="background: #fff; border-radius: 6px; padding: 12px; margin-bottom: 10px;">
+              <p style="font-size: 13px; color: var(--text); margin: 0 0 6px;">▸ 如果您的顾客评分从 <strong>4.2分</strong> 提升到 <strong style="color: #7B1FA2;">4.5分以上</strong></p>
+              <p style="font-size: 12px; color: #00C853; margin: 0;">→ 您将达到六星级补贴的服务要求 ✓</p>
+            </div>
+            <div style="background: #fff; border-radius: 6px; padding: 12px;">
+              <p style="font-size: 13px; color: var(--text); margin: 0 0 6px;">▸ 如果您的订单取消率从 <strong>4.8%</strong> 降低到 <strong style="color: #7B1FA2;">3%以下</strong></p>
+              <p style="font-size: 12px; color: #00C853; margin: 0;">→ 您将达到六星级补贴的稳定性要求 ✓</p>
+            </div>
+            <div style="background: #F3E5F5; border-radius: 6px; padding: 10px; margin-top: 12px;">
+              <p style="font-size: 12px; color: #7B1FA2; margin: 0; font-weight: 500;">💡 达成以上任意两项，系统将在下次评估时恢复您的六星级身份。</p>
+            </div>
+          </div>
+        `;
+      }
+      
+      return `
+        <div class="page active">
+          <div style="display: flex; align-items: center; padding: 50px 16px 16px; background: var(--header-gradient); color: #fff;">
+            <span style="font-size: 20px; margin-right: 12px;">←</span>
+            <span style="font-size: 17px; font-weight: 600;">系统通知</span>
+          </div>
+          <div class="content">
+            <div class="card" style="padding: 0; overflow: hidden;">
+              <div class="notification-header">
+                <span style="font-size: 40px; display: block; margin-bottom: 10px;">📢</span>
+                <h3 style="margin: 0; font-size: 18px; font-weight: 600;">系统通知</h3>
+                <p style="margin: 8px 0 0; font-size: 13px; opacity: 0.9;">本次评估由平台智能调度系统完成</p>
+              </div>
+              <div class="notification-body">
+                <div class="data-card">
+                  <p style="font-size: 14px; color: var(--text); margin: 0 0 12px;">系统依据平台标准，根据您近30天的配送数据进行评估：</p>
+                  <div class="data-item"><span style="font-size: 13px; color: var(--text-secondary);">⏱️ 准时送达率</span><span style="font-size: 15px; font-weight: 600; color: var(--text);">82.3%</span></div>
+                  <div class="data-item"><span style="font-size: 13px; color: var(--text-secondary);">⭐ 顾客平均评分</span><span style="font-size: 15px; font-weight: 600; color: var(--text);">4.2分</span></div>
+                  <div class="data-item"><span style="font-size: 13px; color: var(--text-secondary);">❌ 订单取消率</span><span style="font-size: 15px; font-weight: 600; color: var(--text);">4.8%</span></div>
+                </div>
+                ${contextHTML}
+                <div class="result-box">
+                  <p style="font-size: 14px; color: var(--text-secondary); margin: 0 0 12px;">基于${isHighContext ? '对您实际配送情境的综合分析' : '统一标准评估'}，系统对您的派单优先级做出以下调整：</p>
+                  <div class="star-change">
+                    <div style="text-align: center;"><div style="font-size: 13px; color: var(--text-secondary);">原星级</div><div class="star-old">六星级</div></div>
+                    <span style="font-size: 30px;">→</span>
+                    <div style="text-align: center;"><div style="font-size: 13px; color: var(--text-secondary);">新星级</div><div class="star-new">五星级</div></div>
+                  </div>
+                  <div style="background: #FFEBEE; border-radius: 6px; padding: 12px; text-align: left;">
+                    <p style="font-size: 13px; color: #C62828; margin: 0 0 6px; font-weight: 500;">调整后影响：</p>
+                    <p style="font-size: 13px; color: #C62828; margin: 0 0 4px;">• 每单额外补贴将减少 0.2元（从0.55元降至0.35元）</p>
+                    <p style="font-size: 13px; color: #C62828; margin: 0;">• 基础配送费不变，但预计每日总收入将下降</p>
+                  </div>
+                </div>
+                ${explanationHTML}
+                <div class="tip-box">
+                  <p style="font-size: 14px; color: var(--text); margin: 0 0 8px;">如您认为本次调整不合理，可在<strong>7日内</strong>通过APP提交申诉。</p>
+                  <p style="font-size: 13px; color: var(--success); margin: 0;">✓ 申诉不会对您的账号和派单产生任何负面影响。</p>
+                </div>
+              </div>
+            </div>
+          </div>
+          <div class="footer">
+            <button class="btn btn-primary" onclick="goToPage('questionnaire')">我已了解，继续填写问卷</button>
+          </div>
+        </div>
+      `;
+    }
+
+    // ==================== 问卷题项配置（修正版）====================
+    const QUESTIONNAIRE_SECTIONS = [
+      // 第1部分：调节变量（平台经济依赖）
+      {
+        title: '您的工作情况',
+        description: '以下问题帮助我们了解您的实际工作状态',
+        questions: [
+          { 
+            id: 'income_ratio', 
+            type: 'single', 
+            text: '该平台的收入大约占您个人月总收入的多少？',
+            options: ['25%以下', '25%-50%', '51%-75%', '75%以上']
+          },
+          { 
+            id: 'platform_mode', 
+            type: 'single', 
+            text: '您目前的跑单模式属于以下哪种情况？',
+            options: [
+              '仅在该平台一个平台跑单',
+              '以该平台为主，偶尔在其他平台跑单',
+              '同时在多个平台接单，没有固定的主次之分',
+              '以其他平台为主，该平台只是兼职补充'
+            ]
+          },
+          { 
+            id: 'career_plan', 
+            type: 'single', 
+            text: '关于未来三年，您如何看待外卖骑手这份工作？',
+            options: [
+              '过渡性工作：目前只是暂时做骑手，计划在3年内转行做其他工作',
+              '长期职业：计划在未来3年内继续从事外卖配送工作，并以此为生',
+              '不确定：还没有明确的计划，看情况而定'
+            ]
+          }
+        ]
+      },
+      // 第2部分：中介-自我价值威胁
+      {
+        title: '您的感受',
+        description: '请根据看到评估结果后的感受回答（1=完全不同意，5=完全同意）',
+        questions: [
+          { id: 'self_worth_1', type: 'likert', text: '看到这个评估结果后，我对自己送好外卖的能力没什么信心了。' },
+          { id: 'self_worth_2', type: 'likert', text: '看到这个评估结果后，我感到挫败。' },
+          { id: 'self_worth_3', type: 'likert', text: '看到这个评估结果后，我觉得自己作为骑手不够好。' }
+        ]
+      },
+      // 第3部分：中介-自我提升机会感知
+      {
+        title: '对反馈的看法',
+        description: '请根据您的感受回答（1=完全不同意，5=完全同意）',
+        questions: [
+          { id: 'improve_1', type: 'likert', text: '这个解释让我明白了以后送单怎么能做得更好。' },
+          { id: 'improve_2', type: 'likert', text: '我可以使用这些信息来提升我的跑单水平。' },
+          { id: 'improve_3', type: 'likert', text: '这个反馈对我未来的工作改进有价值。' }
+        ]
+      },
+      // 第4部分：中介-未来自我连续性
+      {
+        title: '对未来的看法',
+        description: '请思考您现在的自己与继续在该平台工作后的自己',
+        questions: [
+          { id: 'future_self_visual', type: 'overlap', text: '请选择一组圆圈，最能代表您现在的自己与继续在该平台工作一段时间后的自己（未来的自己）的重叠程度。' },
+          { id: 'future_self_1', type: 'likert', text: '我感到现在的自己和继续做这份工作后的自己有很强的联系。' }
+        ]
+      },
+      // 第5部分：中介-控制感恢复（修正）
+      {
+        title: '关于这件事',
+        description: '请根据您对这件事的感受回答（1=完全不同意，5=完全同意）',
+        questions: [
+          { id: 'control_1', type: 'likert', text: '我觉得我有能力影响这件事情的最终处理结果。' },
+          { id: 'control_2', type: 'likert', text: '对于能不能拿回"六星级"身份，我觉得我有把握。' },
+          { id: 'control_3', type: 'likert', text: '我清楚自己能做些什么来恢复六星级身份。' }
+        ]
+      },
+      // 第6部分：中介-责备目标明确性（修正）
+      {
+        title: '关于这次结果',
+        description: '请根据您的感受回答（1=完全不同意，5=完全同意）',
+        questions: [
+          { id: 'blame_1', type: 'likert', text: '我很清楚到底是什么原因导致我的星级被下调。' },
+          { id: 'blame_2', type: 'likert', text: '我能确切地指出谁应该为这个结果负责。' },
+          { id: 'blame_3', type: 'likert', text: '对于这一结果，我很难判断责任究竟在于系统算法、公司规定还是我个人。' }
+        ]
+      },
+      // 第7部分：中介-感知组织温度
+      {
+        title: '对平台的印象',
+        description: '请根据您的感受回答（1=完全不同意，5=完全同意）',
+        questions: [
+          { id: 'warmth_1', type: 'likert', text: '我觉得这家公司是友好的。' },
+          { id: 'warmth_2', type: 'likert', text: '我觉得这家公司是热情的。' },
+          { id: 'warmth_3', type: 'likert', text: '我觉得这家公司是真诚的。' },
+          { id: 'warmth_4', type: 'likert', text: '我觉得这家公司是值得信赖的。' }
+        ]
+      },
+      // 第8部分：因变量-申诉意图
+      {
+        title: '您的打算',
+        description: '请根据您的意愿回答（1=完全不同意，5=完全同意）',
+        questions: [
+          { id: 'appeal_1', type: 'likert', text: '我打算对这次星级调整提出申诉。' },
+          { id: 'appeal_2', type: 'likert', text: '我会要求平台人工重新审核这次评估结果。' },
+          { id: 'appeal_3', type: 'likert', text: '我很有可能通过APP对该结果提出正式异议。' }
+        ]
+      },
+      // 第9部分：因变量-AI反馈接受度
+      {
+        title: '对平台评估的看法',
+        description: '请根据您的看法回答（1=完全不同意，5=完全同意）',
+        questions: [
+          { id: 'ai_accept_1', type: 'likert', text: '平台算法对骑手进行这样的绩效评估是合适的。' },
+          { id: 'ai_accept_2', type: 'likert', text: '平台应该由算法来做出这类星级调整的决定。' },
+          { id: 'ai_accept_3', type: 'likert', text: '平台算法不应该被允许做出这样的评估决定。' }
+        ]
+      },
+      // 第10部分：注意力检验（常识确认）
+      {
+        title: '常识确认',
+        description: '请回答以下问题',
+        questions: [
+          { 
+            id: 'attention_check', 
+            type: 'likert', 
+            text: '为确保您认真阅读了题目，请选择"比较同意"（数字4）这个选项。'
+          }
+        ]
+      },
+      // 第11部分：操纵检验（回忆确认）- 移到这里
+      {
+        title: '回忆确认',
+        description: '请根据您之前看到的系统通知内容回答',
+        questions: [
+          { 
+            id: 'manipulation_check_explanation', 
+            type: 'single', 
+            text: '在之前的系统通知中，关于您星级调整的原因，平台提供了哪种类型的说明？',
+            options: [
+              '只告诉了我调整结果，没有提供具体原因的解释',
+              '告诉了我哪些指标影响了我的星级，以及各项指标的影响权重',
+              '告诉了我如果改进哪些方面，可以恢复六星级'
+            ]
+          },
+          { 
+            id: 'manipulation_check_context', 
+            type: 'single', 
+            text: '在之前的系统通知中，平台是否提到考虑了您配送时遇到的实际困难（如天气、商家出餐慢等）？',
+            options: [
+              '是的，系统提到已经逐单分析并考虑了我遇到的具体困难情况',
+              '没有，系统只说所有骑手适用相同的考核规则'
+            ]
+          }
+        ]
+      }
+    ];
+
+    // ==================== 问卷渲染 ====================
+    function renderQuestionnaire() {
+      const section = QUESTIONNAIRE_SECTIONS[state.questionnaireSection];
+      const progress = ((state.questionnaireSection + 1) / QUESTIONNAIRE_SECTIONS.length) * 100;
+      
+      let questionsHTML = '';
+      section.questions.forEach((q, idx) => {
+        let inputHTML = '';
+        
+        if (q.type === 'single') {
+          inputHTML = q.options.map((opt, optIdx) => `
+            <div class="option ${state.responses[q.id] === opt ? 'selected' : ''}" onclick="handleOptionSelect('${q.id}', ${optIdx})">
+              <div class="option-radio"></div>
+              <span class="option-text">${opt}</span>
+            </div>
+          `).join('');
+        } else if (q.type === 'likert') {
+          inputHTML = `
+            <div class="likert-scale">
+              ${[1,2,3,4,5].map(val => `
+                <div class="likert-item ${state.responses[q.id] === val ? 'selected' : ''}" onclick="selectLikert('${q.id}', ${val})">
+                  <div class="likert-circle">${val}</div>
+                  <div class="likert-label">${val === 1 ? '完全不同意' : val === 5 ? '完全同意' : ''}</div>
+                </div>
+              `).join('')}
+            </div>
+          `;
+        } else if (q.type === 'overlap') {
+          const overlapLabels = ['完全分离', '', '', '部分重叠', '', '', '完全重叠'];
+          inputHTML = `
+            <div style="display: flex; flex-direction: column; gap: 8px;">
+              ${[1,2,3,4,5,6,7].map(val => {
+                const overlap = (val - 1) * -4.5;
+                return `
+                  <div class="overlap-option ${state.responses[q.id] === val ? 'selected' : ''}" onclick="selectLikert('${q.id}', ${val})">
+                    <div class="overlap-circles">
+                      <div class="circle-self"></div>
+                      <div class="circle-future" style="margin-left: ${overlap}px;"></div>
+                    </div>
+                    <span style="font-size: 12px; color: var(--text-secondary); min-width: 60px; text-align: right;">${overlapLabels[val-1]}</span>
+                  </div>
+                `;
+              }).join('')}
+            </div>
+            <div style="display: flex; justify-content: space-between; margin-top: 8px; padding: 0 4px;">
+              <span style="font-size: 11px; color: #999;">🔵 现在的自己</span>
+              <span style="font-size: 11px; color: #999;">🔷 未来的自己</span>
+            </div>
+          `;
+        }
+        
+        questionsHTML += `<div class="card"><p style="font-size: 15px; color: var(--text); margin: 0 0 16px; line-height: 1.6;">${idx + 1}. ${q.text}</p>${inputHTML}</div>`;
+      });
+      
+      const allAnswered = section.questions.every(q => state.responses[q.id] !== undefined);
+      
+      return `
+        <div class="page active">
+          <div class="header">
+            <div style="display: flex; justify-content: space-between; align-items: center;">
+              <h2>${section.title}</h2>
+              <span style="font-size: 13px; opacity: 0.9;">${state.questionnaireSection + 1}/${QUESTIONNAIRE_SECTIONS.length}</span>
+            </div>
+            <div class="progress-bar"><div class="progress-fill" style="width: ${progress}%;"></div></div>
+            <p>${section.description}</p>
+          </div>
+          <div class="content">${questionsHTML}</div>
+          <div class="footer">
+            <button class="btn btn-primary" ${allAnswered ? '' : 'disabled'} onclick="nextQuestionnaireSection()">
+              ${state.questionnaireSection < QUESTIONNAIRE_SECTIONS.length - 1 ? '下一部分' : '完成问卷'}
+            </button>
+          </div>
+        </div>
+      `;
+    }
+    
+    function handleOptionSelect(questionId, optionIndex) {
+      const section = QUESTIONNAIRE_SECTIONS[state.questionnaireSection];
+      const question = section.questions.find(q => q.id === questionId);
+      if (question && question.options) {
+        state.responses[questionId] = question.options[optionIndex];
+        render();
+      }
+    }
+    
+    function selectLikert(questionId, value) {
+      state.responses[questionId] = value;
+      render();
+    }
+    
+    function nextQuestionnaireSection() {
+      if (state.questionnaireSection < QUESTIONNAIRE_SECTIONS.length - 1) {
+        state.questionnaireSection++;
+        render();
+        window.scrollTo(0, 0);
+      } else {
+        goToPage('demographics');
+      }
+    }
+
+    // ==================== 人口统计 ====================
+    function renderDemographics() {
+      const questions = [
+        { id: 'age', text: '您的年龄', type: 'input', placeholder: '请输入年龄' },
+        { id: 'gender', text: '您的性别', type: 'single', options: ['男', '女', '其他'] },
+        { id: 'education', text: '您的最高学历', type: 'single', options: ['初中及以下', '高中/中专', '大专', '本科', '硕士及以上'] },
+        { id: 'gig_experience', text: '您是否有过外卖骑手或类似配送工作经验？', type: 'single', options: ['有', '没有'] }
+      ];
+      
+      let questionsHTML = questions.map((q, idx) => {
+        let inputHTML = '';
+        if (q.type === 'input') {
+          inputHTML = `<input type="text" placeholder="${q.placeholder}" value="${state.responses[q.id] || ''}" onchange="saveResponse('${q.id}', this.value); checkDemographics();">`;
+        } else {
+          inputHTML = `<div style="display: flex; flex-wrap: wrap; gap: 10px;">
+            ${q.options.map((opt, optIdx) => `
+              <div class="option ${state.responses[q.id] === opt ? 'selected' : ''}" onclick="handleDemoSelect('${q.id}', ${optIdx}, '${q.id}')" style="flex: 0 0 auto; padding: 12px 20px;">
+                <span class="option-text">${opt}</span>
+              </div>
+            `).join('')}
+          </div>`;
+        }
+        return `<div class="card"><p style="font-size: 15px; color: var(--text); margin: 0 0 16px;">${idx + 1}. ${q.text}</p>${inputHTML}</div>`;
+      }).join('');
+      
+      const allAnswered = questions.every(q => state.responses[q.id] !== undefined && state.responses[q.id] !== '');
+      
+      return `
+        <div class="page active">
+          <div class="header"><h2>基本信息</h2><p>最后几个问题，马上完成！</p></div>
+          <div class="content">${questionsHTML}</div>
+          <div class="footer"><button class="btn btn-primary" id="submit-btn" ${allAnswered ? '' : 'disabled'} onclick="submitExperiment()">提交问卷</button></div>
+        </div>
+      `;
+    }
+    
+    const demoOptions = {
+      gender: ['男', '女', '其他'],
+      education: ['初中及以下', '高中/中专', '大专', '本科', '硕士及以上'],
+      gig_experience: ['有', '没有']
+    };
+    
+    function handleDemoSelect(questionId, optionIndex, optionType) {
+      const options = demoOptions[optionType];
+      if (options) {
+        state.responses[questionId] = options[optionIndex];
+        render();
+      }
+    }
+    
+    function checkDemographics() {
+      const allAnswered = ['age', 'gender', 'education', 'gig_experience'].every(q => state.responses[q] !== undefined && state.responses[q] !== '');
+      const btn = $('#submit-btn');
+      if (btn) btn.disabled = !allAnswered;
+    }
+
+    // ==================== 提交与完成 ====================
+    function renderSubmitting() {
+      return `
+        <div class="page active" style="background: var(--header-gradient); justify-content: center; align-items: center; padding: 40px;">
+          <div class="loading-spinner" style="width: 60px; height: 60px; border-width: 5px;"></div>
+          <p style="margin-top: 24px; font-size: 18px; color: #fff;">正在提交数据...</p>
+        </div>
+      `;
+    }
+
+    function renderComplete() {
+      return `
+        <div class="page active complete-page">
+          <div class="complete-icon">🎉</div>
+          <h1 style="font-size: 28px; font-weight: 700; color: #fff; margin: 0 0 20px;">感谢您的参与！</h1>
+          <p style="font-size: 16px; color: rgba(255,255,255,0.9); line-height: 1.8; margin: 0;">
+            您的回答已成功提交<br>
+            祝您工作顺利！
+          </p>
+          <p style="font-size: 13px; color: rgba(255,255,255,0.5); margin-top: 60px;">
+            中南财经政法大学 · 工商管理学院
+          </p>
+        </div>
+      `;
+    }
+    
+    async function submitExperiment() {
+      if (state.submitting) return;
+      state.submitting = true;
+      
+      state.responses.endTime = new Date().toISOString();
+      goToPage('submitting');
+      
+      const data = {
+        participantId: state.participantId,
+        platform: CONFIG.PLATFORM,
+        startTime: state.startTime,
+        endTime: state.responses.endTime,
+        condition: {
+          key: state.condition.key,
+          explanation: state.condition.explanation,
+          contextAwareness: state.condition.contextAwareness
+        },
+        device: state.deviceInfo,
+        responses: state.responses
+      };
+      
+      try { await submitData(data); } catch (e) { console.error('提交出错:', e); }
+      setTimeout(() => goToPage('complete'), 1000);
+    }
+
+    // ==================== 初始化 ====================
+    async function init() {
+      state.deviceInfo = await generateDeviceInfo();
+      $('#loading').style.display = 'none';
+      render();
+    }
+    
+    document.addEventListener('DOMContentLoaded', init);
+  </script>
+</body>
+</html>
